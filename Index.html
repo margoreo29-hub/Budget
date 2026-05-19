@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0f0f13" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Budget" />
+  <title>Budget Mensuel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0f0f13; color: #f0ede8; font-family: Georgia, 'Times New Roman', serif; }
+
+    /* Header */
+    #header {
+      background: linear-gradient(135deg, #1a1a24 0%, #12121a 100%);
+      border-bottom: 1px solid #2a2a3a;
+      padding: 20px 16px 0;
+      position: sticky; top: 0; z-index: 10;
+    }
+    #header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    #header-label { font-size: 10px; letter-spacing: 0.2em; color: #7a7a9a; text-transform: uppercase; margin-bottom: 4px; }
+    #header-title { font-size: 22px; font-weight: normal; letter-spacing: -0.02em; }
+    #header-selects { display: flex; gap: 6px; }
+
+    /* Tabs */
+    #tabs { display: flex; overflow-x: auto; scrollbar-width: none; }
+    #tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: #7a7a9a; font-family: inherit; font-size: 13px; letter-spacing: 0.04em;
+      padding: 10px 14px; cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
+    }
+    .tab-btn.active { border-bottom-color: #e0a554; color: #e0a554; }
+
+    /* Main */
+    #main { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+
+    /* Summary cards */
+    #cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .card {
+      background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 10px; padding: 14px 12px;
+    }
+    .card-label { font-size: 9px; color: #7a7a9a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+    .card-value { font-size: 15px; font-weight: bold; letter-spacing: -0.02em; }
+    .card-sub { font-size: 10px; color: #7a7a9a; margin-top: 4px; }
+
+    /* Section label */
+    .section-label { font-size: 11px; color: #7a7a9a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+
+    /* Inputs */
+    input, select {
+      background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px;
+      color: #f0ede8; font-family: inherit; font-size: 14px; padding: 10px 12px;
+      outline: none; width: 100%; transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #4a4a6a; }
+    input[type=number] { -moz-appearance: textfield; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    /* Rows */
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .row input, .row select { flex: 1; width: auto; }
+    .row .lbl-input { flex: 2; }
+    .row .amt-input { flex: 1; text-align: right; }
+    .row .cat-select { flex: 1.4; font-size: 12px; }
+    .eur { color: #7a7a9a; font-size: 13px; flex-shrink: 0; }
+
+    /* Buttons */
+    .add-btn {
+      background: none; border: 1px solid #2a2a4a; border-radius: 8px;
+      color: #e0a554; font-family: inherit; font-size: 13px; padding: 8px 14px;
+      cursor: pointer; letter-spacing: 0.03em;
+    }
+    .remove-btn {
+      background: none; border: none; color: #5a5a7a; font-size: 20px;
+      cursor: pointer; padding: 2px 6px; line-height: 1; flex-shrink: 0;
+    }
+    .row-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+
+    /* Total row */
+    .total-row {
+      margin-top: 16px; padding-top: 14px; border-top: 1px solid #2a2a3a;
+      display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 15px;
+    }
+    .total-label { color: #7a7a9a; }
+
+    /* Bar chart */
+    .bar-wrap { margin-bottom: 14px; }
+    .bar-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+    .bar-track { background: #1e1e2a; border-radius: 4px; height: 7px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+    /* Health box */
+    .health-box {
+      margin-top: 24px; padding: 18px; border-radius: 12px; background: #1a1a24; font-size: 13px;
+    }
+    .health-title { font-weight: bold; margin-bottom: 6px; }
+    .health-body { color: #9090a8; line-height: 1.6; }
+
+    /* Objectif */
+    .obj-box { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .obj-field { margin-bottom: 14px; }
+    .obj-field label { font-size: 12px; color: #9090a8; display: block; margin-bottom: 6px; }
+    .type-btns { display: flex; gap: 8px; }
+    .type-btn {
+      flex: 1; padding: 10px 8px; border-radius: 8px; border: 1px solid #2a2a3a;
+      background: #12121a; color: #7a7a9a; font-family: inherit; font-size: 12px; cursor: pointer; transition: all 0.2s; text-align: center;
+    }
+    .type-btn.active { border-color: #e0a554; background: #2a2010; color: #e0a554; }
+    .amt-row { display: flex; align-items: center; gap: 8px; }
+    .amt-row input { flex: 1; }
+    .hint { font-size: 11px; color: #7a7a9a; margin-top: 5px; }
+
+    .progress-box { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; }
+    .progress-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .progress-name { font-size: 15px; margin-bottom: 3px; }
+    .progress-sub { font-size: 11px; color: #7a7a9a; }
+    .progress-pct { font-size: 26px; font-weight: bold; }
+    .progress-track { background: #0f0f13; border-radius: 8px; height: 14px; overflow: hidden; margin-bottom: 14px; }
+    .progress-fill { height: 100%; border-radius: 8px; transition: width 0.6s ease; }
+    .status-msg { padding: 12px 14px; background: #12121a; border-radius: 8px; font-size: 12px; color: #9090a8; line-height: 1.6; }
+    .suggest-msg { margin-top: 10px; padding: 12px 14px; background: #12121a; border-radius: 8px; font-size: 12px; color: #9090a8; }
+    .suggest-title { color: #e0a554; margin-bottom: 6px; }
+    .empty { text-align: center; color: #5a5a7a; padding: 32px 0; font-size: 13px; }
+
+    /* Hide tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-top">
+    <div>
+      <div id="header-label">Gestionnaire de budget</div>
+      <div id="header-title">—</div>
+    </div>
+    <div id="header-selects">
+      <select id="sel-mois" style="width:auto;font-size:12px;padding:6px 10px;"></select>
+      <select id="sel-annee" style="width:auto;font-size:12px;padding:6px 10px;"></select>
+    </div>
+  </div>
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="apercu">Aperçu</button>
+    <button class="tab-btn" data-tab="revenus">Revenus</button>
+    <button class="tab-btn" data-tab="depenses">Dépenses</button>
+    <button class="tab-btn" data-tab="objectif">🎯 Objectif</button>
+  </div>
+</div>
+
+<div id="main">
+  <!-- Summary cards -->
+  <div id="cards">
+    <div class="card">
+      <div class="card-label">Revenus</div>
+      <div class="card-value" id="c-revenus" style="color:#54e09e">0,00 €</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Dépenses</div>
+      <div class="card-value" id="c-depenses" style="color:#e07b54">0,00 €</div>
+    </div>
+    <div class="card">
+      <div class="card-label" id="c-solde-label">Solde</div>
+      <div class="card-value" id="c-solde" style="color:#54a8e0">0,00 €</div>
+      <div class="card-sub" id="c-taux"></div>
+    </div>
+  </div>
+
+  <!-- APERÇU -->
+  <div class="tab-panel active" id="panel-apercu">
+    <div class="section-label">Répartition des dépenses</div>
+    <div id="bars"></div>
+    <div id="apercu-empty" class="empty">Aucune dépense saisie pour ce mois.</div>
+    <div class="health-box" id="health-box" style="display:none">
+      <div class="health-title" id="health-title"></div>
+      <div class="health-body" id="health-body"></div>
+    </div>
+  </div>
+
+  <!-- REVENUS -->
+  <div class="tab-panel" id="panel-revenus">
+    <div class="row-actions">
+      <div class="section-label" style="margin-bottom:0">Sources de revenus</div>
+      <button class="add-btn" id="btn-add-revenu">+ Ajouter</button>
+    </div>
+    <div id="list-revenus"></div>
+    <div class="total-row">
+      <span class="total-label">Total</span>
+      <span id="total-revenus-display" style="color:#54e09e;font-weight:bold">0,00 €</span>
+    </div>
+  </div>
+
+  <!-- DÉPENSES -->
+  <div class="tab-panel" id="panel-depenses">
+    <div class="row-actions">
+      <div class="section-label" style="margin-bottom:0">Postes de dépenses</div>
+      <button class="add-btn" id="btn-add-depense">+ Ajouter</button>
+    </div>
+    <div id="list-depenses"></div>
+    <div class="total-row">
+      <span class="total-label">Total</span>
+      <span id="total-depenses-display" style="color:#e07b54;font-weight:bold">0,00 €</span>
+    </div>
+  </div>
+
+  <!-- OBJECTIF -->
+  <div class="tab-panel" id="panel-objectif">
+    <div class="section-label">Objectif d'épargne mensuel</div>
+    <div class="obj-box">
+      <div class="obj-field">
+        <label>Nom de l'objectif</label>
+        <input type="text" id="obj-label" placeholder="Ex : Vacances, épargne de précaution…" />
+      </div>
+      <div class="obj-field">
+        <label>Type d'objectif</label>
+        <div class="type-btns">
+          <button class="type-btn active" data-type="montant">Montant fixe (€)</button>
+          <button class="type-btn" data-type="pourcentage">% des revenus</button>
+        </div>
+      </div>
+      <div class="obj-field">
+        <label id="obj-valeur-label">Montant cible (€)</label>
+        <div class="amt-row">
+          <input type="number" id="obj-valeur" placeholder="Ex : 500" min="0" step="10" />
+          <span class="eur" id="obj-unit">€</span>
+        </div>
+        <div class="hint" id="obj-hint"></div>
+      </div>
+    </div>
+    <div class="progress-box" id="progress-box" style="display:none">
+      <div class="progress-header">
+        <div>
+          <div class="progress-name" id="prog-name">Mon objectif</div>
+          <div class="progress-sub" id="prog-sub"></div>
+        </div>
+        <div class="progress-pct" id="prog-pct">0%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <div class="status-msg" id="prog-status"></div>
+      <div class="suggest-msg" id="prog-suggest" style="display:none">
+        <div class="suggest-title">💡 Suggestion</div>
+        <div id="prog-suggest-text"></div>
+      </div>
+    </div>
+    <div class="empty" id="obj-empty">Définissez un montant ou un pourcentage cible ci-dessus.</div>
+  </div>
+</div>
+
+<script>
+const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const CATS = [
+  { id: "logement",     label: "Logement",     emoji: "🏠", color: "#e07b54" },
+  { id: "alimentation", label: "Alimentation", emoji: "🛒", color: "#e0a554" },
+  { id: "transport",    label: "Transport",    emoji: "🚗", color: "#54a8e0" },
+  { id: "sante",        label: "Santé",        emoji: "💊", color: "#54e09e" },
+  { id: "loisirs",      label: "Loisirs",      emoji: "🎬", color: "#a854e0" },
+  { id: "vetements",    label: "Vêtements",    emoji: "👕", color: "#e054a8" },
+  { id: "abonnements",  label: "Abonnements",  emoji: "📱", color: "#54e0d4" },
+  { id: "autre",        label: "Autre",        emoji: "📦", color: "#8e8e8e" },
+];
+
+function formatEur(n) {
+  return n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+}
+
+// State
+const now = new Date();
+let state = loadState() || {
+  moisIdx: now.getMonth(),
+  annee: now.getFullYear(),
+  revenus: [{ id: 1, label: "Salaire", montant: "" }],
+  depenses: [{ id: 1, label: "Loyer", categorie: "logement", montant: "" }],
+  objectifType: "montant",
+  objectifValeur: "",
+  objectifLabel: "",
+};
+
+function saveState() {
+  try { localStorage.setItem("budget_data", JSON.stringify(state)); } catch(e) {}
+}
+function loadState() {
+  try { const s = localStorage.getItem("budget_data"); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+
+// Init selects
+const selMois = document.getElementById("sel-mois");
+const selAnnee = document.getElementById("sel-annee");
+MOIS.forEach((m, i) => { const o = document.createElement("option"); o.value = i; o.textContent = m; selMois.appendChild(o); });
+[2024,2025,2026,2027].forEach(y => { const o = document.createElement("option"); o.value = y; o.textContent = y; selAnnee.appendChild(o); });
+selMois.value = state.moisIdx;
+selAnnee.value = state.annee;
+selMois.addEventListener("change", () => { state.moisIdx = +selMois.value; saveState(); render(); });
+selAnnee.addEventListener("change", () => { state.annee = +selAnnee.value; saveState(); render(); });
+
+// Tabs
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// Objectif type buttons
+document.querySelectorAll(".type-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.objectifType = btn.dataset.type;
+    saveState();
+    renderObjectif();
+  });
+});
+document.getElementById("obj-label").addEventListener("input", e => { state.objectifLabel = e.target.value; saveState(); renderObjectif(); });
+document.getElementById("obj-valeur").addEventListener("input", e => { state.objectifValeur = e.target.value; saveState(); renderObjectif(); });
+
+// Add buttons
+document.getElementById("btn-add-revenu").addEventListener("click", () => {
+  state.revenus.push({ id: Date.now(), label: "", montant: "" });
+  saveState(); renderRevenus(); renderSummary();
+});
+document.getElementById("btn-add-depense").addEventListener("click", () => {
+  state.depenses.push({ id: Date.now(), label: "", categorie: "autre", montant: "" });
+  saveState(); renderDepenses(); renderSummary();
+});
+
+function renderRevenus() {
+  const list = document.getElementById("list-revenus");
+  list.innerHTML = "";
+  state.revenus.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <input class="lbl-input" type="text" placeholder="Source (ex: Salaire)" value="${esc(r.label)}" data-id="${r.id}" data-field="label" />
+      <input class="amt-input" type="number" placeholder="0" min="0" step="0.01" value="${esc(r.montant)}" data-id="${r.id}" data-field="montant" />
+      <span class="eur">€</span>
+      <button class="remove-btn" data-id="${r.id}" data-type="revenu">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("input").forEach(inp => inp.addEventListener("input", onRevenuChange));
+  list.querySelectorAll(".remove-btn").forEach(btn => btn.addEventListener("click", onRemove));
+}
+
+function renderDepenses() {
+  const list = document.getElementById("list-depenses");
+  list.innerHTML = "";
+  state.depenses.forEach(d => {
+    const row = document.createElement("div");
+    row.className = "row";
+    const catOptions = CATS.map(c => `<option value="${c.id}" ${d.categorie === c.id ? "selected" : ""}>${c.emoji} ${c.label}</option>`).join("");
+    row.innerHTML = `
+      <input class="lbl-input" type="text" placeholder="Libellé" value="${esc(d.label)}" data-id="${d.id}" data-field="label" />
+      <select class="cat-select" data-id="${d.id}" data-field="categorie">${catOptions}</select>
+      <input class="amt-input" type="number" placeholder="0" min="0" step="0.01" value="${esc(d.montant)}" data-id="${d.id}" data-field="montant" />
+      <span class="eur">€</span>
+      <button class="remove-btn" data-id="${d.id}" data-type="depense">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll("input, select").forEach(inp => inp.addEventListener("input", onDepenseChange));
+  list.querySelectorAll(".remove-btn").forEach(btn => btn.addEventListener("click", onRemove));
+}
+
+function onRevenuChange(e) {
+  const id = +e.target.dataset.id, field = e.target.dataset.field;
+  const r = state.revenus.find(x => x.id === id);
+  if (r) { r[field] = e.target.value; saveState(); renderSummary(); renderApercu(); renderObjectif(); }
+  document.getElementById("total-revenus-display").textContent = formatEur(totalRevenus());
+}
+
+function onDepenseChange(e) {
+  const id = +e.target.dataset.id, field = e.target.dataset.field;
+  const d = state.depenses.find(x => x.id === id);
+  if (d) { d[field] = e.target.value; saveState(); renderSummary(); renderApercu(); renderObjectif(); }
+  document.getElementById("total-depenses-display").textContent = formatEur(totalDepenses());
+}
+
+function onRemove(e) {
+  const id = +e.target.dataset.id, type = e.target.dataset.type;
+  if (type === "revenu") state.revenus = state.revenus.filter(x => x.id !== id);
+  else state.depenses = state.depenses.filter(x => x.id !== id);
+  saveState(); renderRevenus(); renderDepenses(); renderSummary(); renderApercu(); renderObjectif();
+}
+
+function totalRevenus() { return state.revenus.reduce((s, r) => s + (parseFloat(r.montant) || 0), 0); }
+function totalDepenses() { return state.depenses.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0); }
+
+function renderSummary() {
+  const tr = totalRevenus(), td = totalDepenses(), solde = tr - td;
+  const taux = tr > 0 ? ((solde / tr) * 100).toFixed(1) : 0;
+  document.getElementById("c-revenus").textContent = formatEur(tr);
+  document.getElementById("c-depenses").textContent = formatEur(td);
+  document.getElementById("c-solde").textContent = formatEur(Math.abs(solde));
+  document.getElementById("c-solde").style.color = solde >= 0 ? "#54a8e0" : "#e05454";
+  document.getElementById("c-solde-label").textContent = solde >= 0 ? "Solde" : "Déficit";
+  document.getElementById("c-taux").textContent = tr > 0 ? `Épargne : ${taux}%` : "";
+  document.getElementById("total-revenus-display").textContent = formatEur(tr);
+  document.getElementById("total-depenses-display").textContent = formatEur(td);
+  document.getElementById("header-title").textContent = MOIS[state.moisIdx] + " " + state.annee;
+}
+
+function renderApercu() {
+  const td = totalDepenses(), tr = totalRevenus(), solde = tr - td;
+  const taux = tr > 0 ? ((solde / tr) * 100).toFixed(1) : 0;
+  const parCat = {};
+  state.depenses.forEach(d => { const m = parseFloat(d.montant) || 0; parCat[d.categorie] = (parCat[d.categorie] || 0) + m; });
+  const maxCat = Math.max(...Object.values(parCat), 1);
+  const bars = document.getElementById("bars");
+  bars.innerHTML = "";
+  let hasAny = false;
+  CATS.forEach(cat => {
+    const val = parCat[cat.id] || 0;
+    if (val === 0) return;
+    hasAny = true;
+    const pct = td > 0 ? (val / td * 100).toFixed(1) : 0;
+    const barW = (val / maxCat * 100).toFixed(1);
+    const div = document.createElement("div");
+    div.className = "bar-wrap";
+    div.innerHTML = `
+      <div class="bar-header">
+        <span>${cat.emoji} ${cat.label}</span>
+        <span style="color:#b0b0c8">${formatEur(val)} <span style="color:#7a7a9a;font-size:11px">(${pct}%)</span></span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${barW}%;background:${cat.color}"></div></div>
+    `;
+    bars.appendChild(div);
+  });
+  document.getElementById("apercu-empty").style.display = hasAny ? "none" : "block";
+  const hbox = document.getElementById("health-box");
+  if (tr > 0) {
+    hbox.style.display = "block";
+    hbox.style.border = `1px solid ${solde >= 0 ? "#2a4a3a" : "#4a2a2a"}`;
+    document.getElementById("health-title").textContent = solde >= 0 ? "✓ Budget équilibré" : "⚠ Budget déficitaire";
+    document.getElementById("health-title").style.color = solde >= 0 ? "#54e09e" : "#e05454";
+    document.getElementById("health-body").textContent = solde >= 0
+      ? `Vous épargnez ${formatEur(solde)} ce mois-ci, soit ${taux}% de vos revenus. ${+taux >= 20 ? "Excellent taux d'épargne !" : +taux >= 10 ? "Bon début !" : "Essayez de viser 20% d'épargne."}`
+      : `Vos dépenses dépassent vos revenus de ${formatEur(Math.abs(solde))}. Revoyez vos postes de dépenses.`;
+  } else {
+    hbox.style.display = "none";
+  }
+}
+
+function renderObjectif() {
+  const type = state.objectifType;
+  // Sync UI
+  document.querySelectorAll(".type-btn").forEach(b => b.classList.toggle("active", b.dataset.type === type));
+  document.getElementById("obj-label").value = state.objectifLabel;
+  document.getElementById("obj-valeur").value = state.objectifValeur;
+  document.getElementById("obj-valeur-label").textContent = type === "montant" ? "Montant cible (€)" : "Pourcentage cible (%)";
+  document.getElementById("obj-unit").textContent = type === "montant" ? "€" : "%";
+  document.getElementById("obj-valeur").placeholder = type === "montant" ? "Ex : 500" : "Ex : 20";
+
+  const tr = totalRevenus();
+  const val = parseFloat(state.objectifValeur) || 0;
+  const objectifMontant = val === 0 ? 0 : (type === "pourcentage" ? tr * val / 100 : val);
+
+  if (type === "pourcentage" && val && tr > 0) {
+    document.getElementById("obj-hint").textContent = `Soit ${formatEur(objectifMontant)} sur vos revenus actuels`;
+  } else {
+    document.getElementById("obj-hint").textContent = "";
+  }
+
+  const progBox = document.getElementById("progress-box");
+  const objEmpty = document.getElementById("obj-empty");
+
+  if (objectifMontant > 0) {
+    progBox.style.display = "block";
+    objEmpty.style.display = "none";
+    const solde = tr - totalDepenses();
+    const progress = Math.max(0, Math.min(solde / objectifMontant * 100, 100));
+    const atteint = solde >= objectifMontant;
+
+    document.getElementById("prog-name").textContent = state.objectifLabel || "Mon objectif";
+    document.getElementById("prog-sub").textContent = `${formatEur(Math.max(solde, 0))} épargnés sur ${formatEur(objectifMontant)}`;
+    document.getElementById("prog-pct").textContent = progress.toFixed(0) + "%";
+    document.getElementById("prog-pct").style.color = atteint ? "#54e09e" : progress >= 50 ? "#e0a554" : "#e07b54";
+
+    const fill = document.getElementById("prog-fill");
+    fill.style.width = progress + "%";
+    fill.style.background = atteint
+      ? "linear-gradient(90deg,#54e09e,#54d4a0)"
+      : progress >= 50
+      ? "linear-gradient(90deg,#e07b54,#e0a554)"
+      : "linear-gradient(90deg,#e05454,#e07b54)";
+
+    const statusEl = document.getElementById("prog-status");
+    if (atteint) {
+      statusEl.innerHTML = `<span style="color:#54e09e">🎉 Objectif atteint ! Vous avez épargné ${formatEur(solde - objectifMontant)} de plus que prévu.</span>`;
+    } else if (solde <= 0) {
+      statusEl.innerHTML = `<span style="color:#e05454">⚠ Votre solde est nul ou négatif. Réduisez vos dépenses.</span>`;
+    } else {
+      const manque = objectifMontant - solde;
+      const pctManque = tr > 0 ? (manque / tr * 100).toFixed(1) : null;
+      statusEl.innerHTML = `Il vous manque <strong style="color:#f0ede8">${formatEur(manque)}</strong> pour atteindre votre objectif.${pctManque ? ` Cela représente <strong style="color:#f0ede8">${pctManque}%</strong> de vos revenus à économiser en plus.` : ""}`;
+    }
+
+    const suggestEl = document.getElementById("prog-suggest");
+    const td = totalDepenses();
+    if (!atteint && solde > 0 && td > 0) {
+      suggestEl.style.display = "block";
+      document.getElementById("prog-suggest-text").textContent = `Une réduction de ${(((objectifMontant - solde) / td) * 100).toFixed(1)}% sur l'ensemble de vos dépenses vous permettrait d'atteindre votre objectif.`;
+    } else {
+      suggestEl.style.display = "none";
+    }
+  } else {
+    progBox.style.display = "none";
+    objEmpty.style.display = "block";
+  }
+}
+
+function esc(s) { return String(s || "").replace(/"/g, "&quot;"); }
+
+function render() {
+  renderRevenus();
+  renderDepenses();
+  renderSummary();
+  renderApercu();
+  renderObjectif();
+}
+
+render();
+</script>
+</body>
+</html>
